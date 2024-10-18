@@ -46,8 +46,41 @@ type SellInfo struct {
 	BUYER				string `json:"BUYER"`
 }
 
+// 链码实例化： 输入 company1, init_val1, company2, init_val2
 func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	fmt.Println("ex02 Init")
+
+	_, args := stub.GetFunctionAndParameters()
+	var A, B string
+	var Aval, Bval int
+	var err error
+
+	if len(args) != 4 {
+		return shim.Error("Incorrect number of arguments. Expecting 4")
+	}
+
+	
+	A = args[0]
+	Aval, err = strconv.Atoi(args[1])
+	if err != nil {
+		return shim.Error("Expecting integer value for asset holding")
+	}
+	B = args[2]
+	Bval, err = strconv.Atoi(args[3])
+	if err != nil {
+		return shim.Error("Expecting integer value for asset holding")
+	}
+	fmt.Printf("Aval = %d, Bval = %d\n", Aval, Bval)
+
+	err = stub.PutState(A, []byte(strconv.Itoa(Aval)))
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	err = stub.PutState(B, []byte(strconv.Itoa(Bval)))
+	if err != nil {
+		return shim.Error(err.Error())
+	}
 
 	return shim.Success(nil)
 }
@@ -69,6 +102,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 }
 
 // Transaction makes payment of X units from A to B
+// input: TXID, SEND_DATE, AMOUNT, SELLER, BUYER
+// function: 创建交易记录 from seller to buyer
 func (t *SimpleChaincode) create(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) != 5 {
 		return shim.Error("Incorrect number of arguments. Expecting 5")
@@ -123,6 +158,11 @@ func (t *SimpleChaincode) check(stub shim.ChaincodeStubInterface, args []string)
 }
 
 // query callback representing the query of a chaincode
+// 查找交易记录 
+// 输入：
+// if interest 为空， 则输入 TXID, SEND_DATE
+// if interest 不为空， 则输入 ?
+// return 交易记录
 func (t *SimpleChaincode) query(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) < 1 {
 		return shim.Error("Incorrect number of arguments. Expecting name of the person to query")
