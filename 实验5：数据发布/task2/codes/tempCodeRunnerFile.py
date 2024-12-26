@@ -1,0 +1,1 @@
+categorical_columns = ['性别', '住址']
